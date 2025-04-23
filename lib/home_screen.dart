@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'login_screen.dart';
+import 'question_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -13,9 +14,20 @@ class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   String _selectedMode = 'Экзамен';
   String _selectedTestCategory = 'ОРТ';
+  String _selectedSubject = 'Математика';
+  String? _selectedTest; // Для отслеживания выбранного теста
+  String? _selectedSubjectTest; // Для отслеживания выбранного предмета
   final List<String> _testCategories = ['ОРТ', 'ЕНТ', 'SAT', 'ЕГЭ'];
 
-  // Динамические данные для тестов
+  // Список предметов в формате словарей
+  final List<Map<String, String>> _subjects = [
+    {'name': 'Математика', 'description': 'Тест по математике'},
+    {'name': 'Физика', 'description': 'Тест по физике'},
+    {'name': 'Химия', 'description': 'Тест по химии'},
+    {'name': 'Биология', 'description': 'Тест по биологии'},
+  ];
+
+  // Динамические данные для тестов (только основные тесты)
   final Map<String, Map<String, List<Map<String, String>>>> _testData = {
     'ОРТ': {
       'main': [
@@ -25,29 +37,17 @@ class _HomeScreenState extends State<HomeScreen>
         },
         {'name': 'Математика', 'description': 'Базовая математика для ОРТ'},
       ],
-      'subjects': [
-        {'name': 'Математика', 'description': 'Углубленный тест по математике'},
-        {'name': 'Физика', 'description': 'Тест по физике для ОРТ'},
-        {'name': 'Химия', 'description': 'Тест по химии для ОРТ'},
-      ],
     },
     'ЕНТ': {
       'main': [
         {'name': 'Казахский язык', 'description': 'Тест по языку для ЕНТ'},
         {'name': 'Математика', 'description': 'Базовая математика для ЕНТ'},
       ],
-      'subjects': [
-        {'name': 'Биология', 'description': 'Тест по биологии для ЕНТ'},
-        {'name': 'География', 'description': 'Тест по географии для ЕНТ'},
-      ],
     },
     'SAT': {
       'main': [
         {'name': 'Математика', 'description': 'Математика для SAT'},
         {'name': 'Чтение', 'description': 'Чтение и анализ текста'},
-      ],
-      'subjects': [
-        {'name': 'Письмо', 'description': 'Тест по письму для SAT'},
       ],
     },
     'ЕГЭ': {
@@ -57,11 +57,6 @@ class _HomeScreenState extends State<HomeScreen>
           'description': 'Тест по русскому языку для ЕГЭ'
         },
         {'name': 'Математика', 'description': 'Базовая математика для ЕГЭ'},
-      ],
-      'subjects': [
-        {'name': 'Физика', 'description': 'Тест по физике для ЕГЭ'},
-        {'name': 'Химия', 'description': 'Тест по химии для ЕГЭ'},
-        {'name': 'История', 'description': 'Тест по истории для ЕГЭ'},
       ],
     },
   };
@@ -86,6 +81,73 @@ class _HomeScreenState extends State<HomeScreen>
   void _startTest(BuildContext context, String testName) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Запущен тест: $testName')),
+    );
+  }
+
+  void _startQuestionFlow(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => QuestionScreen(
+          subject: _selectedSubject,
+          mode: _selectedMode,
+        ),
+      ),
+    );
+  }
+
+  void _showStartTestDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Начать тест по предмету: $_selectedSubject'),
+        content: Text(
+            'Вы выбрали тест: $_selectedTestCategory ($_selectedMode). Начать?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Отмена'),
+          ),
+          GestureDetector(
+            onTap: () {
+              Navigator.pop(context); // Закрываем диалог
+              _startQuestionFlow(context); // Запускаем тест
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: _gradientColors,
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFFF66CC).withOpacity(0.3),
+                    blurRadius: 8,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: const Text(
+                'Начать тест',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black,
+                      offset: Offset(1, 1),
+                      blurRadius: 2,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -146,7 +208,6 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   Widget build(BuildContext context) {
     final mainTests = _testData[_selectedTestCategory]!['main']!;
-    final subjectTests = _testData[_selectedTestCategory]!['subjects']!;
 
     return Scaffold(
       appBar: AppBar(
@@ -206,8 +267,7 @@ class _HomeScreenState extends State<HomeScreen>
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _selectedMode == 'Экзамен'
-                        ? const Color(
-                            0xFFFF66CC) // Используем розовый из иконки
+                        ? const Color(0xFFFF66CC)
                         : Colors.grey[300],
                   ),
                   child: const Text('Экзамен'),
@@ -234,6 +294,7 @@ class _HomeScreenState extends State<HomeScreen>
             height: 50,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
               itemCount: _testCategories.length,
               itemBuilder: (context, index) {
                 final category = _testCategories[index];
@@ -244,6 +305,9 @@ class _HomeScreenState extends State<HomeScreen>
                     onTap: () {
                       setState(() {
                         _selectedTestCategory = category;
+                        _selectedTest = null;
+                        _selectedSubjectTest =
+                            null; // Сброс выбранного предмета
                       });
                     },
                     child: Container(
@@ -283,10 +347,16 @@ class _HomeScreenState extends State<HomeScreen>
                             fontWeight: isSelected
                                 ? FontWeight.bold
                                 : FontWeight.normal,
-                            color: isSelected
-                                ? Colors
-                                    .white // Белый текст для контраста с градиентом
-                                : Colors.black,
+                            color: isSelected ? Colors.white : Colors.black,
+                            shadows: isSelected
+                                ? [
+                                    const Shadow(
+                                      color: Colors.black,
+                                      offset: Offset(1, 1),
+                                      blurRadius: 2,
+                                    ),
+                                  ]
+                                : [],
                           ),
                         ),
                       ),
@@ -297,7 +367,7 @@ class _HomeScreenState extends State<HomeScreen>
             ),
           ),
           const SizedBox(height: 16),
-          // Тесты в виде иконок
+          // Основные тесты и предметы
           Expanded(
             child: ListView(
               children: [
@@ -312,115 +382,214 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
                 SizedBox(
                   height: 120,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: mainTests.length,
-                    itemBuilder: (context, index) {
-                      final test = mainTests[index];
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                        child: GestureDetector(
-                          onTap: () {
-                            if (_selectedMode == 'Экзамен') {
-                              _startTest(context, '${test['name']} (Экзамен)');
-                            } else {
-                              _startTest(context, '${test['name']} (Практика)');
-                            }
+                  child: mainTests.isEmpty
+                      ? const Center(child: Text('Нет основных тестов'))
+                      : ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          physics: const BouncingScrollPhysics(),
+                          itemCount: mainTests.length,
+                          itemBuilder: (context, index) {
+                            final test = mainTests[index];
+                            final isSelected = test['name'] == _selectedTest;
+                            return RepaintBoundary(
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8.0),
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _selectedTest = test['name'];
+                                    });
+                                    if (_selectedMode == 'Экзамен') {
+                                      _startTest(
+                                          context, '${test['name']} (Экзамен)');
+                                    } else {
+                                      _startTest(context,
+                                          '${test['name']} (Практика)');
+                                    }
+                                  },
+                                  child: Container(
+                                    width: 100,
+                                    decoration: BoxDecoration(
+                                      gradient: isSelected
+                                          ? LinearGradient(
+                                              colors: _gradientColors,
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
+                                            )
+                                          : null,
+                                      color:
+                                          isSelected ? null : Colors.grey[200],
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: isSelected
+                                            ? const Color(0xFFFF66CC)
+                                            : Colors.grey,
+                                      ),
+                                      boxShadow: isSelected
+                                          ? [
+                                              BoxShadow(
+                                                color: const Color(0xFFFF66CC)
+                                                    .withOpacity(0.3),
+                                                blurRadius: 8,
+                                                spreadRadius: 2,
+                                              ),
+                                            ]
+                                          : [],
+                                    ),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          test['name']!,
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: isSelected
+                                                ? Colors.white
+                                                : Colors.black,
+                                            shadows: isSelected
+                                                ? [
+                                                    const Shadow(
+                                                      color: Colors.black,
+                                                      offset: Offset(1, 1),
+                                                      blurRadius: 2,
+                                                    ),
+                                                  ]
+                                                : [],
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          test['description']!,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: isSelected
+                                                ? Colors.white70
+                                                : Colors.grey,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
                           },
-                          child: Container(
-                            width: 100,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[200],
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: Colors.grey),
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  test['name']!,
-                                  style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold),
-                                  textAlign: TextAlign.center,
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  test['description']!,
-                                  style: const TextStyle(
-                                      fontSize: 12, color: Colors.grey),
-                                  textAlign: TextAlign.center,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
-                          ),
                         ),
-                      );
-                    },
-                  ),
                 ),
                 const SizedBox(height: 16),
-                // Предметные тесты
+                // Предметы
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Text(
-                    'Предметные тесты ($_selectedTestCategory)',
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold),
+                  child: const Text(
+                    'Предметы',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ),
                 SizedBox(
                   height: 120,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: subjectTests.length,
-                    itemBuilder: (context, index) {
-                      final test = subjectTests[index];
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                        child: GestureDetector(
-                          onTap: () {
-                            if (_selectedMode == 'Экзамен') {
-                              _startTest(context, '${test['name']} (Экзамен)');
-                            } else {
-                              _startTest(context, '${test['name']} (Практика)');
-                            }
+                  child: _subjects.isEmpty
+                      ? const Center(child: Text('Нет предметов'))
+                      : ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          physics: const BouncingScrollPhysics(),
+                          itemCount: _subjects.length,
+                          itemBuilder: (context, index) {
+                            final subject = _subjects[index];
+                            final isSelected =
+                                subject['name'] == _selectedSubjectTest;
+                            return RepaintBoundary(
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8.0),
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _selectedSubjectTest = subject['name'];
+                                      _selectedSubject = subject['name']!;
+                                    });
+                                    _showStartTestDialog(context);
+                                  },
+                                  child: Container(
+                                    width: 100,
+                                    decoration: BoxDecoration(
+                                      gradient: isSelected
+                                          ? LinearGradient(
+                                              colors: _gradientColors,
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
+                                            )
+                                          : null,
+                                      color:
+                                          isSelected ? null : Colors.grey[200],
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: isSelected
+                                            ? const Color(0xFFFF66CC)
+                                            : Colors.grey,
+                                      ),
+                                      boxShadow: isSelected
+                                          ? [
+                                              BoxShadow(
+                                                color: const Color(0xFFFF66CC)
+                                                    .withOpacity(0.3),
+                                                blurRadius: 8,
+                                                spreadRadius: 2,
+                                              ),
+                                            ]
+                                          : [],
+                                    ),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          subject['name']!,
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: isSelected
+                                                ? Colors.white
+                                                : Colors.black,
+                                            shadows: isSelected
+                                                ? [
+                                                    const Shadow(
+                                                      color: Colors.black,
+                                                      offset: Offset(1, 1),
+                                                      blurRadius: 2,
+                                                    ),
+                                                  ]
+                                                : [],
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          subject['description']!,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: isSelected
+                                                ? Colors.white70
+                                                : Colors.grey,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
                           },
-                          child: Container(
-                            width: 100,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[200],
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: Colors.grey),
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  test['name']!,
-                                  style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold),
-                                  textAlign: TextAlign.center,
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  test['description']!,
-                                  style: const TextStyle(
-                                      fontSize: 12, color: Colors.grey),
-                                  textAlign: TextAlign.center,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
-                          ),
                         ),
-                      );
-                    },
-                  ),
                 ),
               ],
             ),
