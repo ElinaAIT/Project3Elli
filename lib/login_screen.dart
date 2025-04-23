@@ -64,7 +64,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 10),
 
               // Заголовок "Welcome"
-                 Text(
+              Text(
                 'Welcome',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
@@ -73,7 +73,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
               ),
               const SizedBox(height: 20),
-
 
               // Поле для Email
               TextField(
