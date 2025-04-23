@@ -7,7 +7,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  shared_preferences: ^2.2.0
+  provider: ^6.0.0 # Add this line to include the provider package
+  shared_preferences: ^2.0.0 # Ensure shared_preferences is also included
 
 dev_dependencies:
   flutter_test:
