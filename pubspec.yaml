@@ -1,0 +1,25 @@
+name: testing_app
+description: A Flutter app for ORT, SAT, EGE practice tests
+version: 1.0.0
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  shared_preferences: ^2.2.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_launcher_icons: ^0.13.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/icon.png
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon.png"
